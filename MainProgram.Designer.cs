@@ -29,12 +29,14 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainProgram));
             this.serialPort1 = new System.IO.Ports.SerialPort(this.components);
             this.OpenPortBtn = new System.Windows.Forms.Button();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.textBox2 = new System.Windows.Forms.TextBox();
             this.StartBtn = new System.Windows.Forms.Button();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.ProgramBtn = new System.Windows.Forms.Button();
             this.SetupBtn = new System.Windows.Forms.Button();
             this.label14 = new System.Windows.Forms.Label();
             this.label13 = new System.Windows.Forms.Label();
@@ -44,11 +46,6 @@
             this.InsBaudRateTextBox = new System.Windows.Forms.TextBox();
             this.BCRBaudRateTextBox = new System.Windows.Forms.TextBox();
             this.InsComPortTextBox = new System.Windows.Forms.TextBox();
-            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
-            this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.setupToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.addUserToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.programMenuItemToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.StopBtn = new System.Windows.Forms.Button();
             this.PartNum = new System.Windows.Forms.TextBox();
             this.LampSN = new System.Windows.Forms.TextBox();
@@ -71,12 +68,16 @@
             this.ChromaModelTextBox = new System.Windows.Forms.TextBox();
             this.ChromaSerialTextBox = new System.Windows.Forms.TextBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.ProgramBtn = new System.Windows.Forms.Button();
+            this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.setupToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.addUserToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.programMenuItemToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.groupBox2.SuspendLayout();
             this.groupBox4.SuspendLayout();
-            this.menuStrip1.SuspendLayout();
             this.groupBox3.SuspendLayout();
             this.groupBox1.SuspendLayout();
+            this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // serialPort1
@@ -141,6 +142,16 @@
             this.groupBox4.TabIndex = 0;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "COM Port Setup";
+            // 
+            // ProgramBtn
+            // 
+            this.ProgramBtn.Location = new System.Drawing.Point(361, 103);
+            this.ProgramBtn.Name = "ProgramBtn";
+            this.ProgramBtn.Size = new System.Drawing.Size(107, 36);
+            this.ProgramBtn.TabIndex = 33;
+            this.ProgramBtn.Text = "Program";
+            this.ProgramBtn.UseVisualStyleBackColor = true;
+            this.ProgramBtn.Click += new System.EventHandler(this.ProgramBtn_Click);
             // 
             // SetupBtn
             // 
@@ -219,46 +230,6 @@
             this.InsComPortTextBox.ReadOnly = true;
             this.InsComPortTextBox.Size = new System.Drawing.Size(169, 20);
             this.InsComPortTextBox.TabIndex = 25;
-            // 
-            // menuStrip1
-            // 
-            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolsToolStripMenuItem});
-            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
-            this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(514, 24);
-            this.menuStrip1.TabIndex = 12;
-            this.menuStrip1.Text = "menuStrip1";
-            // 
-            // toolsToolStripMenuItem
-            // 
-            this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.setupToolStripMenuItem,
-            this.addUserToolStripMenuItem,
-            this.programMenuItemToolStripMenuItem});
-            this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
-            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
-            this.toolsToolStripMenuItem.Text = "Tools";
-            // 
-            // setupToolStripMenuItem
-            // 
-            this.setupToolStripMenuItem.Name = "setupToolStripMenuItem";
-            this.setupToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
-            this.setupToolStripMenuItem.Text = "Setup";
-            // 
-            // addUserToolStripMenuItem
-            // 
-            this.addUserToolStripMenuItem.Name = "addUserToolStripMenuItem";
-            this.addUserToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
-            this.addUserToolStripMenuItem.Text = "Add User";
-            this.addUserToolStripMenuItem.Click += new System.EventHandler(this.addUserToolStripMenuItem_Click);
-            // 
-            // programMenuItemToolStripMenuItem
-            // 
-            this.programMenuItemToolStripMenuItem.Name = "programMenuItemToolStripMenuItem";
-            this.programMenuItemToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
-            this.programMenuItemToolStripMenuItem.Text = "Program";
-            this.programMenuItemToolStripMenuItem.Click += new System.EventHandler(this.programMenuItemToolStripMenuItem_Click);
             // 
             // StopBtn
             // 
@@ -457,15 +428,45 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Chroma Info";
             // 
-            // ProgramBtn
+            // toolsToolStripMenuItem
             // 
-            this.ProgramBtn.Location = new System.Drawing.Point(361, 103);
-            this.ProgramBtn.Name = "ProgramBtn";
-            this.ProgramBtn.Size = new System.Drawing.Size(107, 36);
-            this.ProgramBtn.TabIndex = 33;
-            this.ProgramBtn.Text = "Program";
-            this.ProgramBtn.UseVisualStyleBackColor = true;
-            this.ProgramBtn.Click += new System.EventHandler(this.ProgramBtn_Click);
+            this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.setupToolStripMenuItem,
+            this.addUserToolStripMenuItem,
+            this.programMenuItemToolStripMenuItem});
+            this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
+            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
+            this.toolsToolStripMenuItem.Text = "Tools";
+            // 
+            // setupToolStripMenuItem
+            // 
+            this.setupToolStripMenuItem.Name = "setupToolStripMenuItem";
+            this.setupToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
+            this.setupToolStripMenuItem.Text = "Setup";
+            // 
+            // addUserToolStripMenuItem
+            // 
+            this.addUserToolStripMenuItem.Name = "addUserToolStripMenuItem";
+            this.addUserToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
+            this.addUserToolStripMenuItem.Text = "Add User";
+            this.addUserToolStripMenuItem.Click += new System.EventHandler(this.addUserToolStripMenuItem_Click);
+            // 
+            // programMenuItemToolStripMenuItem
+            // 
+            this.programMenuItemToolStripMenuItem.Name = "programMenuItemToolStripMenuItem";
+            this.programMenuItemToolStripMenuItem.Size = new System.Drawing.Size(118, 22);
+            this.programMenuItemToolStripMenuItem.Text = "Program";
+            this.programMenuItemToolStripMenuItem.Click += new System.EventHandler(this.programMenuItemToolStripMenuItem_Click);
+            // 
+            // menuStrip1
+            // 
+            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolsToolStripMenuItem});
+            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip1.Name = "menuStrip1";
+            this.menuStrip1.Size = new System.Drawing.Size(514, 24);
+            this.menuStrip1.TabIndex = 12;
+            this.menuStrip1.Text = "menuStrip1";
             // 
             // MainProgram
             // 
@@ -480,6 +481,7 @@
             this.Controls.Add(this.StartBtn);
             this.Controls.Add(this.menuStrip1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "MainProgram";
             this.Text = "Chroma Electrical Safety Tester";
@@ -489,12 +491,12 @@
             this.groupBox2.PerformLayout();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
-            this.menuStrip1.ResumeLayout(false);
-            this.menuStrip1.PerformLayout();
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
+            this.menuStrip1.ResumeLayout(false);
+            this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -508,16 +510,11 @@
         private System.Windows.Forms.TextBox textBox2;
         private System.Windows.Forms.Button StartBtn;
         private System.Windows.Forms.GroupBox groupBox4;
-        private System.Windows.Forms.MenuStrip menuStrip1;
-        private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem addUserToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem programMenuItemToolStripMenuItem;
         private System.Windows.Forms.Button StopBtn;
         private System.Windows.Forms.TextBox PartNum;
         private System.Windows.Forms.TextBox LampSN;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.ToolStripMenuItem setupToolStripMenuItem;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.TextBox ModelNum;
         private System.Windows.Forms.TextBox BallastSN;
@@ -545,6 +542,11 @@
         private System.Windows.Forms.TextBox ChromaSerialTextBox;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Button ProgramBtn;
+        private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem setupToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem addUserToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem programMenuItemToolStripMenuItem;
+        private System.Windows.Forms.MenuStrip menuStrip1;
     }
 }
 

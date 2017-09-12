@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SetupForm));
             this.OKBtn = new System.Windows.Forms.Button();
             this.InsComPortComboBox = new System.Windows.Forms.ComboBox();
             this.BCRComPortComboBox = new System.Windows.Forms.ComboBox();
@@ -181,6 +182,7 @@
             this.Controls.Add(this.Chroma);
             this.Controls.Add(this.OKBtn);
             this.Controls.Add(this.groupBox1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "SetupForm";
             this.Text = "Setup";
             this.Load += new System.EventHandler(this.SetupForm_Load);

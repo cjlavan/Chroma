@@ -107,6 +107,7 @@
             this.Controls.Add(this.PasswordTextBox);
             this.Controls.Add(this.UserNameTextBox);
             this.Controls.Add(this.pictureBox1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "LoginScreen";
             this.Text = "Chroma Electrical Safety Tester";
             this.Load += new System.EventHandler(this.Form2_Load);
