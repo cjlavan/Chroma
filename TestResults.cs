@@ -30,6 +30,8 @@ namespace WindowsFormsApplication2
 
         private void TestResults_Load(object sender, EventArgs e)
         {
+            // TODO: This line of code loads data into the 'ChromaLoginDBDataSet.TestData' table. You can move, or remove it, as needed.
+            this.TestDataTableAdapter.Fill(this.ChromaLoginDBDataSet.TestData);
             //SQLPop();
             AccPop();
 

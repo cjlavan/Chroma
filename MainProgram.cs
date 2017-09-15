@@ -193,6 +193,25 @@ namespace WindowsFormsApplication2
             Debug.WriteLine(BCRBaudRate);
         }
 
+        private void ProgramBtn_Click(object sender, EventArgs e)
+        {
+            //Check for serial port
+            if (!serialPort1.IsOpen)
+            {
+                MessageBox.Show("No COM Port");
+            }
+            else
+            {
+                StreamReader tempFile = new StreamReader("C:\\Users\\clavan\\Desktop\\ChromaTestProfile.txt");
+                while ((line = tempFile.ReadLine()) != null)
+                {
+                    serialPort1.Write(line + "\n\r");
+                    fileReaderCounter++;
+                }
+                tempFile.Close();
+            }
+        }
+
         private void addUserToolStripMenuItem_Click(object sender, EventArgs e)
         {
             AddUser newform = new AddUser(isAdmin2);
@@ -219,138 +238,6 @@ namespace WindowsFormsApplication2
             serialPort1.WriteLine("SAFE:RES:ALL?\n\r");         Thread.Sleep(500);  //Returns judgement results of all steps ex:
         }
         
-        //----------------Serial Port 1 Listener------------------------
-        public delegate void AddDataDelegate(String mySerString);
-        public AddDataDelegate myDelegate;
-        private void AddDataMethod (String mySerString)
-        {
-            textBox2.Text = mySerString;
-            Debug.WriteLine("Serial Recieved on serialPort1");
-
-            ReceiveSetupInfo(mySerString);
-
-            if ((testFlag == 1) && (i<4)) // 4 for MODE, OMET, MMET, RES:ALL
-            {
-                //Parse string & create array
-                string[] serDataString = mySerString.Split(',');
-
-                for (int counter=0; counter < 7; counter++)
-                {
-                    Debug.WriteLine(serDataString[counter]);
-                    if ((serDataString[counter].Length >= 3) && (String.Equals(serDataString[counter].Substring(0, 3), "116", StringComparison.Ordinal)))
-                    {   serDataString[counter] = "PASS";    }
-                    else if ((serDataString[counter].Length >= 3) && (String.Equals(serDataString[counter].Substring(0, 3), "115", StringComparison.Ordinal)))
-                    {   serDataString[counter] = "TESTING"; }
-                    else if ((serDataString[counter].Length >= 3) && (String.Equals(serDataString[counter].Substring(0, 3), "114", StringComparison.Ordinal)))
-                    {   serDataString[counter] = "CAN NOT TEST";    }
-                    else if ((serDataString[counter].Length >= 3) && (String.Equals(serDataString[counter].Substring(0, 3), "113", StringComparison.Ordinal)))
-                    {   serDataString[counter] = "USER STOP";   }
-                    else if ((serDataString[counter].Length >= 3) && (String.Equals(serDataString[counter].Substring(0, 3), "112", StringComparison.Ordinal)))
-                    {   serDataString[counter] = "STOP";    }
-                }
-                serDataArray[i] = serDataString;
-
-                i++;
-
-                if (i == 4)
-                {
-                    i = 0;
-                    testFlag = 0;
-                    WriteToDB();
-                    WriteToAccessDB();
-                    GenerateReport();
-                }
-            }
-
-            //Look for PASS/FAIL
-            if (mySerString.Length >= 6)
-            {
-                if (String.Equals(mySerString.Substring(0, 6), "\"PASS\"", StringComparison.Ordinal))
-                {
-                    GetTestResults();
-                }
-                else if (String.Equals(mySerString.Substring(0, 6), "\"FAIL\"", StringComparison.Ordinal))
-                {
-                    MessageBox.Show("FAIL");
-                }
-            }
-        }
-        private void serialPort1_DataReceived(object sender, SerialDataReceivedEventArgs e)
-        {
-            string newSerString = this.serialPort1.ReadLine();
-            newSerString = newSerString.TrimEnd('\r');
-            Debug.WriteLine(newSerString);
-            testString = newSerString;
-            textBox2.Invoke(this.myDelegate, new Object[] { newSerString });
-        }
-        //----------------End Serial Port 1 Listener---------------------
-        
-
-        //----------------Serial Port 2 Listener------------------------
-        public delegate void AddDataDelegate2(String indata);
-        public AddDataDelegate2 myDelegate2;
-        private void AddDataMethod2(String indata)
-        {
-            Debug.WriteLine("AddDataMethod2");
-            if (String.Equals(indata.Substring(0,6), "CHROMA", StringComparison.Ordinal))
-            {
-                string[] ChromaInfo = indata.Split('X');
-                ChromaModelTextBox.Text = ChromaInfo[0];
-                ChromaSerialTextBox.Text = ChromaInfo[1];
-                ChromaCalDateTextBox.Text = ChromaInfo[2];
-            }
-            else if (String.Equals(indata.Substring(0, 2), "WO", StringComparison.Ordinal))
-            {
-                Debug.WriteLine("Work Order Detected");
-                WorkOrderNum.Text = indata;
-            }
-            else if (String.Equals(indata.Substring(0, 4), "+$$+", StringComparison.Ordinal))
-            {
-                Debug.WriteLine("Unit Serial Number Detected");
-                string[] snparsed = indata.Split('+','/' );
-                IlluminatorSN.Text = snparsed[2];
-            }
-            else if (String.Equals(indata.Substring(0, 6), "TX450D", StringComparison.Ordinal))
-            {
-                Debug.WriteLine("Part Number Detected");
-                PartNum.Text = indata;
-            }
-            else if (indata.Length >= 6 && indata.Length >= 9 && String.Equals(indata.Substring(0, 9), "TITANX450", StringComparison.Ordinal))
-            {
-                Debug.WriteLine("Model Number Detected");
-                ModelNum.Text = indata;
-            }
-            else if (indata.Length >= 6 && indata.Length >= 6 && String.Equals(indata.Substring(0, 7), "1234567", StringComparison.Ordinal))
-            {
-                Debug.WriteLine("Ballast SN Detected");
-                BallastSN.Text = indata;
-            }
-            else if (indata.Length == 7)
-            {
-                Debug.WriteLine("Lamp Serial Number Detected");
-                LampSN.Text = indata;
-            }
-        }
-        private void serialPort2_DataReceived(object sender, SerialDataReceivedEventArgs e)
-        {
-            Debug.WriteLine("Serial Recieved on serialPort2");
-
-            SerialPort sp = (SerialPort)sender;                 
-            string indata = sp.ReadExisting();  //sp.ReadLine wasn't working
-
-            indata = indata.TrimEnd('\r');
-            Debug.WriteLine(indata);
-            WorkOrderNum.Invoke(this.myDelegate2, new Object[] { indata });
-        }
-        //----------------End Serial Port 2 Listener---------------------
-
-        private void GenerateReport()
-        {
-            TestResults TestResultsForm = new TestResults();
-            TestResultsForm.StartPosition = FormStartPosition.CenterParent;
-            TestResultsForm.ShowDialog();
-        }
-
         private void GetSetupInfo()
         {
             TestInfoFlag = 1;
@@ -437,241 +324,6 @@ namespace WindowsFormsApplication2
 
             serialPort1.Write("SAFE:START\r\n");
             textBox2.Text = "Testing";
-        }
-
-        private void WriteToDB()
-        {
-            for (int count = 0; count < 7; count++)
-            {
-                SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\clavan\Downloads\FRPSE4ZGA1BD540\C#\ChromaLoginDB.mdf;Integrated Security=True;Connect Timeout=30");
-                con.Open();
-                SqlCommand cmd = new SqlCommand("INSERT INTO [TestData] (Username, TestDate, IlluminatorSN, OMET, MMET, Judgement, WorkOrderNumber, ModelNumber, PartNumber, BallastSN, LampSN, ChromaModel, ChromaSerial, ChromaCalDate, Mode, LCDEV, LCLine, LCGswi, LCMETER, LCLIMIT, LCLIMLOW, LCPOWMODE, TestTime, LCCHAN, GBLEVEL, GBLIMIT, GBLIMITLOW, GBTIME, GBTPORT, ACVOLTAGE, ACLIMIT, ACLIMITLOW, ACLIMITARC, ACLIMITARCFILTER, ACTIME, ACTIMERAMP, ACCHAN, ACCHANLOW) VALUES (@Username, @TestDate, @IlluminatorSN, @OMET, @MMET, @Judgement, @WorkOrderNumber, @ModelNumber, @PartNumber, @BallastSN, @LampSN, @ChromaModel, @ChromaSerial, @ChromaCalDate, @Mode, @LCDEV, @LCLine, @LCGswi, @LCMETER, @LCLIMIT, @LCLIMLOW, @LCPOWMODE, @TestTime, @LCCHAN, @GBLEVEL, @GBLIMIT, @GBLIMITLOW, @GBTIME, @GBTPORT, @ACVOLTAGE, @ACLIMIT, @ACLIMITLOW, @ACLIMITARC, @ACLIMITARCFILTER, @ACTIME, @ACTIMERAMP, @ACCHAN, @ACCHANLOW)", con);
-
-                cmd.Parameters.AddWithValue("@Username", userName2);
-                cmd.Parameters.AddWithValue("@TestDate", DateTime.Now.ToString());
-                cmd.Parameters.AddWithValue("@IlluminatorSN", IlluminatorSN.Text);
-                cmd.Parameters.AddWithValue("@OMET", serDataArray[1][count]);
-                cmd.Parameters.AddWithValue("@MMET", serDataArray[2][count]);
-                cmd.Parameters.AddWithValue("@Judgement", serDataArray[3][count]);
-                cmd.Parameters.AddWithValue("@WorkOrderNumber", WorkOrderNum.Text);
-                cmd.Parameters.AddWithValue("@ModelNumber", ModelNum.Text);
-                cmd.Parameters.AddWithValue("@PartNumber", PartNum.Text);
-                cmd.Parameters.AddWithValue("@BallastSN", BallastSN.Text);
-                cmd.Parameters.AddWithValue("@LampSN", LampSN.Text);
-                cmd.Parameters.AddWithValue("@ChromaModel", ChromaModelTextBox.Text);
-                cmd.Parameters.AddWithValue("@ChromaSerial", ChromaSerialTextBox.Text);
-                cmd.Parameters.AddWithValue("@ChromaCalDate", ChromaCalDateTextBox.Text);
-                cmd.Parameters.AddWithValue("@Mode", serDataArray[0][count]);
-
-                if (String.Equals(serDataArray[0][count].Substring(0, 2), "LC", StringComparison.Ordinal))
-                {
-                    cmd.Parameters.AddWithValue("@LCDEV", LCDEV[count]);
-                    cmd.Parameters.AddWithValue("@LCLine", LCLines[count]);
-                    cmd.Parameters.AddWithValue("@LCGswi", LCGswi[count]);
-                    cmd.Parameters.AddWithValue("@LCMETER", LCMETER[count]);
-                    cmd.Parameters.AddWithValue("@LCLIMIT", LCLIMIT[count]);
-                    cmd.Parameters.AddWithValue("@LCLIMLOW", LCLIMLOW[count]);
-                    cmd.Parameters.AddWithValue("@LCPOWMODE", LCPOWMODE[count]);
-                    cmd.Parameters.AddWithValue("@TestTime", LCTESTTIME[count]);
-                    cmd.Parameters.AddWithValue("@LCCHAN", LCCHAN[count]);
-                }
-                else
-                {
-                    cmd.Parameters.AddWithValue("@LCDEV", "N/A");
-                    cmd.Parameters.AddWithValue("@LCLine", "N/A");
-                    cmd.Parameters.AddWithValue("@LCGswi", "N/A");
-                    cmd.Parameters.AddWithValue("@LCMETER", "N/A");
-                    cmd.Parameters.AddWithValue("@LCLIMIT", "N/A");
-                    cmd.Parameters.AddWithValue("@LCLIMLOW", "N/A");
-                    cmd.Parameters.AddWithValue("@LCPOWMODE", "N/A");
-                    cmd.Parameters.AddWithValue("@TestTime", "N/A");
-                    cmd.Parameters.AddWithValue("@LCCHAN", "N/A");
-                }
-
-                if (String.Equals(serDataArray[0][count].Substring(0, 2), "GB", StringComparison.Ordinal))
-                {
-                    cmd.Parameters.AddWithValue("@GBLEVEL", GBLEVEL);
-                    cmd.Parameters.AddWithValue("@GBLIMIT", GBLIMIT);
-                    cmd.Parameters.AddWithValue("@GBLIMITLOW", GBLIMITLOW);
-                    cmd.Parameters.AddWithValue("@GBTIME", GBTIME);
-                    cmd.Parameters.AddWithValue("@GBTPORT", GBTPORT);
-                }
-                else
-                {
-                    cmd.Parameters.AddWithValue("@GBLEVEL", "N/A");
-                    cmd.Parameters.AddWithValue("@GBLIMIT", "N/A");
-                    cmd.Parameters.AddWithValue("@GBLIMITLOW", "N/A");
-                    cmd.Parameters.AddWithValue("@GBTIME", "N/A");
-                    cmd.Parameters.AddWithValue("@GBTPORT", "N/A");
-                }
-
-                if (String.Equals(serDataArray[0][count].Substring(0, 2), "AC", StringComparison.Ordinal))
-                {
-                    cmd.Parameters.AddWithValue("@ACVOLTAGE", ACVOLTAGE);
-                    cmd.Parameters.AddWithValue("@ACLIMIT", ACLIMIT);
-                    cmd.Parameters.AddWithValue("@ACLIMITLOW", ACLIMITLOW);
-                    cmd.Parameters.AddWithValue("@ACLIMITARC", ACLIMITARC);
-                    cmd.Parameters.AddWithValue("@ACLIMITARCFILTER", ACLIMITARCFILTER);
-                    cmd.Parameters.AddWithValue("@ACTIME", ACTIME);
-                    cmd.Parameters.AddWithValue("@ACTIMERAMP", ACTIMERAMP);
-                    cmd.Parameters.AddWithValue("@ACCHAN", ACCHAN);
-                    cmd.Parameters.AddWithValue("@ACCHANLOW", ACCHANLOW);
-                }
-                else
-                {
-                    cmd.Parameters.AddWithValue("@ACVOLTAGE", "N/A");
-                    cmd.Parameters.AddWithValue("@ACLIMIT", "N/A");
-                    cmd.Parameters.AddWithValue("@ACLIMITLOW", "N/A");
-                    cmd.Parameters.AddWithValue("@ACLIMITARC", "N/A");
-                    cmd.Parameters.AddWithValue("@ACLIMITARCFILTER", "N/A");
-                    cmd.Parameters.AddWithValue("@ACTIME", "N/A");
-                    cmd.Parameters.AddWithValue("@ACTIMERAMP", "N/A");
-                    cmd.Parameters.AddWithValue("@ACCHAN", "N/A");
-                    cmd.Parameters.AddWithValue("@ACCHANLOW", "N/A");
-                }
-                
-                cmd.ExecuteNonQuery();
-                con.Close();
-            }
-        }
-
-        private void WriteToAccessDB()
-        {
-            for (int count = 0; count < 7; count++)
-            {
-                OleDbConnection conn = new OleDbConnection();
-                conn.ConnectionString = @"Provider = Microsoft.ACE.OLEDB.12.0;" + @"Data Source = P:\\Access Databases\\ChromaTesting.accdb";
-
-                conn.Open();
-                OleDbCommand cmd = new OleDbCommand("INSERT INTO [TestData] (Username, TestDate, IlluminatorSN, OMET, MMET, Judgement, WorkOrderNumber, ModelNumber, PartNumber, BallastSN, LampSN, ChromaModel, ChromaSerial, ChromaCalDate, Mode, LCDEV, LCLine, LCGswi, LCMETER, LCLIMIT, LCLIMLOW, LCPOWMODE, TestTime, LCCHAN, GBLEVEL, GBLIMIT, GBLIMITLOW, GBTIME, GBTPORT, ACVOLTAGE, ACLIMIT, ACLIMITLOW, ACLIMITARC, ACLIMITARCFILTER, ACTIME, ACTIMERAMP, ACCHAN, ACCHANLOW) VALUES (@Username, @TestDate, @IlluminatorSN, @OMET, @MMET, @Judgement, @WorkOrderNumber, @ModelNumber, @PartNumber, @BallastSN, @LampSN, @ChromaModel, @ChromaSerial, @ChromaCalDate, @Mode, @LCDEV, @LCLine, @LCGswi, @LCMETER, @LCLIMIT, @LCLIMLOW, @LCPOWMODE, @TestTime, @LCCHAN, @GBLEVEL, @GBLIMIT, @GBLIMITLOW, @GBTIME, @GBTPORT, @ACVOLTAGE, @ACLIMIT, @ACLIMITLOW, @ACLIMITARC, @ACLIMITARCFILTER, @ACTIME, @ACTIMERAMP, @ACCHAN, @ACCHANLOW)", conn);
-                cmd.Connection = conn;
-
-                cmd.Parameters.AddWithValue("@Username", userName2);
-                cmd.Parameters.AddWithValue("@TestDate", DateTime.Now.ToString());
-                cmd.Parameters.AddWithValue("@IlluminatorSN", IlluminatorSN.Text);
-                cmd.Parameters.AddWithValue("@OMET", serDataArray[1][count]);
-                cmd.Parameters.AddWithValue("@MMET", serDataArray[2][count]);
-                cmd.Parameters.AddWithValue("@Judgement", serDataArray[3][count]);
-                cmd.Parameters.AddWithValue("@WorkOrderNumber", WorkOrderNum.Text);
-                cmd.Parameters.AddWithValue("@ModelNumber", ModelNum.Text);
-                cmd.Parameters.AddWithValue("@PartNumber", PartNum.Text);
-                cmd.Parameters.AddWithValue("@BallastSN", BallastSN.Text);
-                cmd.Parameters.AddWithValue("@LampSN", LampSN.Text);
-                cmd.Parameters.AddWithValue("@ChromaModel", ChromaModelTextBox.Text);
-                cmd.Parameters.AddWithValue("@ChromaSerial", ChromaSerialTextBox.Text);
-                cmd.Parameters.AddWithValue("@ChromaCalDate", ChromaCalDateTextBox.Text);
-                cmd.Parameters.AddWithValue("@Mode", serDataArray[0][count]);
-
-                if (String.Equals(serDataArray[0][count].Substring(0, 2), "LC", StringComparison.Ordinal))
-                {
-                    cmd.Parameters.AddWithValue("@LCDEV", LCDEV[count]);
-                    cmd.Parameters.AddWithValue("@LCLine", LCLines[count]);
-                    cmd.Parameters.AddWithValue("@LCGswi", LCGswi[count]);
-                    cmd.Parameters.AddWithValue("@LCMETER", LCMETER[count]);
-                    cmd.Parameters.AddWithValue("@LCLIMIT", LCLIMIT[count]);
-                    cmd.Parameters.AddWithValue("@LCLIMLOW", LCLIMLOW[count]);
-                    cmd.Parameters.AddWithValue("@LCPOWMODE", LCPOWMODE[count]);
-                    cmd.Parameters.AddWithValue("@TestTime", LCTESTTIME[count]);
-                    cmd.Parameters.AddWithValue("@LCCHAN", LCCHAN[count]);
-                }
-                else
-                {
-                    cmd.Parameters.AddWithValue("@LCDEV", "N/A");
-                    cmd.Parameters.AddWithValue("@LCLine", "N/A");
-                    cmd.Parameters.AddWithValue("@LCGswi", "N/A");
-                    cmd.Parameters.AddWithValue("@LCMETER", "N/A");
-                    cmd.Parameters.AddWithValue("@LCLIMIT", "N/A");
-                    cmd.Parameters.AddWithValue("@LCLIMLOW", "N/A");
-                    cmd.Parameters.AddWithValue("@LCPOWMODE", "N/A");
-                    cmd.Parameters.AddWithValue("@TestTime", "N/A");
-                    cmd.Parameters.AddWithValue("@LCCHAN", "N/A");
-                }
-
-                if (String.Equals(serDataArray[0][count].Substring(0, 2), "GB", StringComparison.Ordinal))
-                {
-                    cmd.Parameters.AddWithValue("@GBLEVEL", GBLEVEL);
-                    cmd.Parameters.AddWithValue("@GBLIMIT", GBLIMIT);
-                    cmd.Parameters.AddWithValue("@GBLIMITLOW", GBLIMITLOW);
-                    cmd.Parameters.AddWithValue("@GBTIME", GBTIME);
-                    cmd.Parameters.AddWithValue("@GBTPORT", GBTPORT);
-                }
-                else
-                {
-                    cmd.Parameters.AddWithValue("@GBLEVEL", "N/A");
-                    cmd.Parameters.AddWithValue("@GBLIMIT", "N/A");
-                    cmd.Parameters.AddWithValue("@GBLIMITLOW", "N/A");
-                    cmd.Parameters.AddWithValue("@GBTIME", "N/A");
-                    cmd.Parameters.AddWithValue("@GBTPORT", "N/A");
-                }
-
-                if (String.Equals(serDataArray[0][count].Substring(0, 2), "AC", StringComparison.Ordinal))
-                {
-                    cmd.Parameters.AddWithValue("@ACVOLTAGE", ACVOLTAGE);
-                    cmd.Parameters.AddWithValue("@ACLIMIT", ACLIMIT);
-                    cmd.Parameters.AddWithValue("@ACLIMITLOW", ACLIMITLOW);
-                    cmd.Parameters.AddWithValue("@ACLIMITARC", ACLIMITARC);
-                    cmd.Parameters.AddWithValue("@ACLIMITARCFILTER", ACLIMITARCFILTER);
-                    cmd.Parameters.AddWithValue("@ACTIME", ACTIME);
-                    cmd.Parameters.AddWithValue("@ACTIMERAMP", ACTIMERAMP);
-                    cmd.Parameters.AddWithValue("@ACCHAN", ACCHAN);
-                    cmd.Parameters.AddWithValue("@ACCHANLOW", ACCHANLOW);
-                }
-                else
-                {
-                    {
-                        cmd.Parameters.AddWithValue("@ACVOLTAGE", "N/A");
-                        cmd.Parameters.AddWithValue("@ACLIMIT", "N/A");
-                        cmd.Parameters.AddWithValue("@ACLIMITLOW", "N/A");
-                        cmd.Parameters.AddWithValue("@ACLIMITARC", "N/A");
-                        cmd.Parameters.AddWithValue("@ACLIMITARCFILTER", "N/A");
-                        cmd.Parameters.AddWithValue("@ACTIME", "N/A");
-                        cmd.Parameters.AddWithValue("@ACTIMERAMP", "N/A");
-                        cmd.Parameters.AddWithValue("@ACCHAN", "N/A");
-                        cmd.Parameters.AddWithValue("@ACCHANLOW", "N/A");
-                    }
-                }
-                cmd.ExecuteNonQuery();
-                conn.Close();
-            }
-        }
-
-        private void OldReceieveSetup(string mySerString)
-        {
-            if (TestInfoFlag == 1)
-            {
-                //Look for Mode - NORMAL, REVERSE, SF-NORMAL, SF-REVERSE
-                //if ((mySerString.Length >= 6) && ((String.Equals(mySerString.Substring(0, 6), "NORMAL", StringComparison.Ordinal)) || (String.Equals(mySerString.Substring(0, 6), "REVERS", StringComparison.Ordinal)) || (String.Equals(mySerString.Substring(0, 6), "SF-NOR", StringComparison.Ordinal)) || (String.Equals(mySerString.Substring(0, 6), "SF-REV", StringComparison.Ordinal))))
-                if (setupIndex == 0)
-                {
-                    LCLines[j] = mySerString;
-                    j++;
-                    if (j >= 6) { j = 0; setupIndex++; }
-                }
-                //Look for Ground Switch 0 or 1
-                //else if ((mySerString.Length == 1) && ((String.Equals(mySerString.Substring(0, 1), "0", StringComparison.Ordinal)) || (String.Equals(mySerString.Substring(0, 1), "1", StringComparison.Ordinal))))
-                else if (setupIndex == 1)
-                {
-                    if (String.Equals(mySerString.Substring(0, 1), "0", StringComparison.Ordinal))
-                    { LCGswi[k] = "Open"; }
-                    else
-                    { LCGswi[k] = "Closed"; }
-                    k++;
-
-                    if (k >= 6) { k = 0; }
-                }
-                //Assume Test Time
-                else if (setupIndex == 2)
-                {
-                    //TestTime[l] = mySerString;
-                    l++;
-
-                    if (l >= 7)
-                    {
-                        l = 0;
-                        TestInfoFlag = 0;
-                    }
-                }
-            }
         }
 
         private void ReceiveSetupInfo(string mySerString)
@@ -839,23 +491,329 @@ namespace WindowsFormsApplication2
             }
         }
 
-        private void ProgramBtn_Click(object sender, EventArgs e)
+        private void WriteToDB()
         {
-            //Check for serial port
-            if (!serialPort1.IsOpen)
+            for (int count = 0; count < 7; count++)
             {
-                MessageBox.Show("No COM Port");
-            }
-            else
-            {
-                StreamReader tempFile = new StreamReader("C:\\Users\\clavan\\Desktop\\ChromaTestProfile.txt");
-                while ((line = tempFile.ReadLine()) != null)
+                SqlConnection con = new SqlConnection(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\clavan\Downloads\FRPSE4ZGA1BD540\C#\ChromaLoginDB.mdf;Integrated Security=True;Connect Timeout=30");
+                con.Open();
+                SqlCommand cmd = new SqlCommand("INSERT INTO [TestData] (Username, TestDate, IlluminatorSN, OMET, MMET, Judgement, WorkOrderNumber, ModelNumber, PartNumber, BallastSN, LampSN, ChromaModel, ChromaSerial, ChromaCalDate, Mode, LCDEV, LCLine, LCGswi, LCMETER, LCLIMIT, LCLIMLOW, LCPOWMODE, TestTime, LCCHAN, GBLEVEL, GBLIMIT, GBLIMITLOW, GBTIME, GBTPORT, ACVOLTAGE, ACLIMIT, ACLIMITLOW, ACLIMITARC, ACLIMITARCFILTER, ACTIME, ACTIMERAMP, ACCHAN, ACCHANLOW) VALUES (@Username, @TestDate, @IlluminatorSN, @OMET, @MMET, @Judgement, @WorkOrderNumber, @ModelNumber, @PartNumber, @BallastSN, @LampSN, @ChromaModel, @ChromaSerial, @ChromaCalDate, @Mode, @LCDEV, @LCLine, @LCGswi, @LCMETER, @LCLIMIT, @LCLIMLOW, @LCPOWMODE, @TestTime, @LCCHAN, @GBLEVEL, @GBLIMIT, @GBLIMITLOW, @GBTIME, @GBTPORT, @ACVOLTAGE, @ACLIMIT, @ACLIMITLOW, @ACLIMITARC, @ACLIMITARCFILTER, @ACTIME, @ACTIMERAMP, @ACCHAN, @ACCHANLOW)", con);
+
+                cmd.Parameters.AddWithValue("@Username", userName2);
+                cmd.Parameters.AddWithValue("@TestDate", DateTime.Now.ToString());
+                cmd.Parameters.AddWithValue("@IlluminatorSN", IlluminatorSN.Text);
+                cmd.Parameters.AddWithValue("@OMET", serDataArray[1][count]);
+                cmd.Parameters.AddWithValue("@MMET", serDataArray[2][count]);
+                cmd.Parameters.AddWithValue("@Judgement", serDataArray[3][count]);
+                cmd.Parameters.AddWithValue("@WorkOrderNumber", WorkOrderNum.Text);
+                cmd.Parameters.AddWithValue("@ModelNumber", ModelNum.Text);
+                cmd.Parameters.AddWithValue("@PartNumber", PartNum.Text);
+                cmd.Parameters.AddWithValue("@BallastSN", BallastSN.Text);
+                cmd.Parameters.AddWithValue("@LampSN", LampSN.Text);
+                cmd.Parameters.AddWithValue("@ChromaModel", ChromaModelTextBox.Text);
+                cmd.Parameters.AddWithValue("@ChromaSerial", ChromaSerialTextBox.Text);
+                cmd.Parameters.AddWithValue("@ChromaCalDate", ChromaCalDateTextBox.Text);
+                cmd.Parameters.AddWithValue("@Mode", serDataArray[0][count]);
+
+                if (String.Equals(serDataArray[0][count].Substring(0, 2), "LC", StringComparison.Ordinal))
                 {
-                    serialPort1.Write(line + "\n\r");
-                    fileReaderCounter++;
+                    cmd.Parameters.AddWithValue("@LCDEV", LCDEV[count]);
+                    cmd.Parameters.AddWithValue("@LCLine", LCLines[count]);
+                    cmd.Parameters.AddWithValue("@LCGswi", LCGswi[count]);
+                    cmd.Parameters.AddWithValue("@LCMETER", LCMETER[count]);
+                    cmd.Parameters.AddWithValue("@LCLIMIT", LCLIMIT[count]);
+                    cmd.Parameters.AddWithValue("@LCLIMLOW", LCLIMLOW[count]);
+                    cmd.Parameters.AddWithValue("@LCPOWMODE", LCPOWMODE[count]);
+                    cmd.Parameters.AddWithValue("@TestTime", LCTESTTIME[count]);
+                    cmd.Parameters.AddWithValue("@LCCHAN", LCCHAN[count]);
                 }
-                tempFile.Close();
+                else
+                {
+                    cmd.Parameters.AddWithValue("@LCDEV", "N/A");
+                    cmd.Parameters.AddWithValue("@LCLine", "N/A");
+                    cmd.Parameters.AddWithValue("@LCGswi", "N/A");
+                    cmd.Parameters.AddWithValue("@LCMETER", "N/A");
+                    cmd.Parameters.AddWithValue("@LCLIMIT", "N/A");
+                    cmd.Parameters.AddWithValue("@LCLIMLOW", "N/A");
+                    cmd.Parameters.AddWithValue("@LCPOWMODE", "N/A");
+                    cmd.Parameters.AddWithValue("@TestTime", "N/A");
+                    cmd.Parameters.AddWithValue("@LCCHAN", "N/A");
+                }
+
+                if (String.Equals(serDataArray[0][count].Substring(0, 2), "GB", StringComparison.Ordinal))
+                {
+                    cmd.Parameters.AddWithValue("@GBLEVEL", GBLEVEL);
+                    cmd.Parameters.AddWithValue("@GBLIMIT", GBLIMIT);
+                    cmd.Parameters.AddWithValue("@GBLIMITLOW", GBLIMITLOW);
+                    cmd.Parameters.AddWithValue("@GBTIME", GBTIME);
+                    cmd.Parameters.AddWithValue("@GBTPORT", GBTPORT);
+                }
+                else
+                {
+                    cmd.Parameters.AddWithValue("@GBLEVEL", "N/A");
+                    cmd.Parameters.AddWithValue("@GBLIMIT", "N/A");
+                    cmd.Parameters.AddWithValue("@GBLIMITLOW", "N/A");
+                    cmd.Parameters.AddWithValue("@GBTIME", "N/A");
+                    cmd.Parameters.AddWithValue("@GBTPORT", "N/A");
+                }
+
+                if (String.Equals(serDataArray[0][count].Substring(0, 2), "AC", StringComparison.Ordinal))
+                {
+                    cmd.Parameters.AddWithValue("@ACVOLTAGE", ACVOLTAGE);
+                    cmd.Parameters.AddWithValue("@ACLIMIT", ACLIMIT);
+                    cmd.Parameters.AddWithValue("@ACLIMITLOW", ACLIMITLOW);
+                    cmd.Parameters.AddWithValue("@ACLIMITARC", ACLIMITARC);
+                    cmd.Parameters.AddWithValue("@ACLIMITARCFILTER", ACLIMITARCFILTER);
+                    cmd.Parameters.AddWithValue("@ACTIME", ACTIME);
+                    cmd.Parameters.AddWithValue("@ACTIMERAMP", ACTIMERAMP);
+                    cmd.Parameters.AddWithValue("@ACCHAN", ACCHAN);
+                    cmd.Parameters.AddWithValue("@ACCHANLOW", ACCHANLOW);
+                }
+                else
+                {
+                    cmd.Parameters.AddWithValue("@ACVOLTAGE", "N/A");
+                    cmd.Parameters.AddWithValue("@ACLIMIT", "N/A");
+                    cmd.Parameters.AddWithValue("@ACLIMITLOW", "N/A");
+                    cmd.Parameters.AddWithValue("@ACLIMITARC", "N/A");
+                    cmd.Parameters.AddWithValue("@ACLIMITARCFILTER", "N/A");
+                    cmd.Parameters.AddWithValue("@ACTIME", "N/A");
+                    cmd.Parameters.AddWithValue("@ACTIMERAMP", "N/A");
+                    cmd.Parameters.AddWithValue("@ACCHAN", "N/A");
+                    cmd.Parameters.AddWithValue("@ACCHANLOW", "N/A");
+                }
+
+                cmd.ExecuteNonQuery();
+                con.Close();
             }
+        }
+
+        private void WriteToAccessDB()
+        {
+            for (int count = 0; count < 7; count++)
+            {
+                OleDbConnection conn = new OleDbConnection();
+                conn.ConnectionString = @"Provider = Microsoft.ACE.OLEDB.12.0;" + @"Data Source = P:\\Access Databases\\ChromaTesting.accdb";
+
+                conn.Open();
+                OleDbCommand cmd = new OleDbCommand("INSERT INTO [TestData] (Username, TestDate, IlluminatorSN, OMET, MMET, Judgement, WorkOrderNumber, ModelNumber, PartNumber, BallastSN, LampSN, ChromaModel, ChromaSerial, ChromaCalDate, Mode, LCDEV, LCLine, LCGswi, LCMETER, LCLIMIT, LCLIMLOW, LCPOWMODE, TestTime, LCCHAN, GBLEVEL, GBLIMIT, GBLIMITLOW, GBTIME, GBTPORT, ACVOLTAGE, ACLIMIT, ACLIMITLOW, ACLIMITARC, ACLIMITARCFILTER, ACTIME, ACTIMERAMP, ACCHAN, ACCHANLOW) VALUES (@Username, @TestDate, @IlluminatorSN, @OMET, @MMET, @Judgement, @WorkOrderNumber, @ModelNumber, @PartNumber, @BallastSN, @LampSN, @ChromaModel, @ChromaSerial, @ChromaCalDate, @Mode, @LCDEV, @LCLine, @LCGswi, @LCMETER, @LCLIMIT, @LCLIMLOW, @LCPOWMODE, @TestTime, @LCCHAN, @GBLEVEL, @GBLIMIT, @GBLIMITLOW, @GBTIME, @GBTPORT, @ACVOLTAGE, @ACLIMIT, @ACLIMITLOW, @ACLIMITARC, @ACLIMITARCFILTER, @ACTIME, @ACTIMERAMP, @ACCHAN, @ACCHANLOW)", conn);
+                cmd.Connection = conn;
+
+                cmd.Parameters.AddWithValue("@Username", userName2);
+                cmd.Parameters.AddWithValue("@TestDate", DateTime.Now.ToString());
+                cmd.Parameters.AddWithValue("@IlluminatorSN", IlluminatorSN.Text);
+                cmd.Parameters.AddWithValue("@OMET", serDataArray[1][count]);
+                cmd.Parameters.AddWithValue("@MMET", serDataArray[2][count]);
+                cmd.Parameters.AddWithValue("@Judgement", serDataArray[3][count]);
+                cmd.Parameters.AddWithValue("@WorkOrderNumber", WorkOrderNum.Text);
+                cmd.Parameters.AddWithValue("@ModelNumber", ModelNum.Text);
+                cmd.Parameters.AddWithValue("@PartNumber", PartNum.Text);
+                cmd.Parameters.AddWithValue("@BallastSN", BallastSN.Text);
+                cmd.Parameters.AddWithValue("@LampSN", LampSN.Text);
+                cmd.Parameters.AddWithValue("@ChromaModel", ChromaModelTextBox.Text);
+                cmd.Parameters.AddWithValue("@ChromaSerial", ChromaSerialTextBox.Text);
+                cmd.Parameters.AddWithValue("@ChromaCalDate", ChromaCalDateTextBox.Text);
+                cmd.Parameters.AddWithValue("@Mode", serDataArray[0][count]);
+
+                if (String.Equals(serDataArray[0][count].Substring(0, 2), "LC", StringComparison.Ordinal))
+                {
+                    cmd.Parameters.AddWithValue("@LCDEV", LCDEV[count]);
+                    cmd.Parameters.AddWithValue("@LCLine", LCLines[count]);
+                    cmd.Parameters.AddWithValue("@LCGswi", LCGswi[count]);
+                    cmd.Parameters.AddWithValue("@LCMETER", LCMETER[count]);
+                    cmd.Parameters.AddWithValue("@LCLIMIT", LCLIMIT[count]);
+                    cmd.Parameters.AddWithValue("@LCLIMLOW", LCLIMLOW[count]);
+                    cmd.Parameters.AddWithValue("@LCPOWMODE", LCPOWMODE[count]);
+                    cmd.Parameters.AddWithValue("@TestTime", LCTESTTIME[count]);
+                    cmd.Parameters.AddWithValue("@LCCHAN", LCCHAN[count]);
+                }
+                else
+                {
+                    cmd.Parameters.AddWithValue("@LCDEV", "N/A");
+                    cmd.Parameters.AddWithValue("@LCLine", "N/A");
+                    cmd.Parameters.AddWithValue("@LCGswi", "N/A");
+                    cmd.Parameters.AddWithValue("@LCMETER", "N/A");
+                    cmd.Parameters.AddWithValue("@LCLIMIT", "N/A");
+                    cmd.Parameters.AddWithValue("@LCLIMLOW", "N/A");
+                    cmd.Parameters.AddWithValue("@LCPOWMODE", "N/A");
+                    cmd.Parameters.AddWithValue("@TestTime", "N/A");
+                    cmd.Parameters.AddWithValue("@LCCHAN", "N/A");
+                }
+
+                if (String.Equals(serDataArray[0][count].Substring(0, 2), "GB", StringComparison.Ordinal))
+                {
+                    cmd.Parameters.AddWithValue("@GBLEVEL", GBLEVEL);
+                    cmd.Parameters.AddWithValue("@GBLIMIT", GBLIMIT);
+                    cmd.Parameters.AddWithValue("@GBLIMITLOW", GBLIMITLOW);
+                    cmd.Parameters.AddWithValue("@GBTIME", GBTIME);
+                    cmd.Parameters.AddWithValue("@GBTPORT", GBTPORT);
+                }
+                else
+                {
+                    cmd.Parameters.AddWithValue("@GBLEVEL", "N/A");
+                    cmd.Parameters.AddWithValue("@GBLIMIT", "N/A");
+                    cmd.Parameters.AddWithValue("@GBLIMITLOW", "N/A");
+                    cmd.Parameters.AddWithValue("@GBTIME", "N/A");
+                    cmd.Parameters.AddWithValue("@GBTPORT", "N/A");
+                }
+
+                if (String.Equals(serDataArray[0][count].Substring(0, 2), "AC", StringComparison.Ordinal))
+                {
+                    cmd.Parameters.AddWithValue("@ACVOLTAGE", ACVOLTAGE);
+                    cmd.Parameters.AddWithValue("@ACLIMIT", ACLIMIT);
+                    cmd.Parameters.AddWithValue("@ACLIMITLOW", ACLIMITLOW);
+                    cmd.Parameters.AddWithValue("@ACLIMITARC", ACLIMITARC);
+                    cmd.Parameters.AddWithValue("@ACLIMITARCFILTER", ACLIMITARCFILTER);
+                    cmd.Parameters.AddWithValue("@ACTIME", ACTIME);
+                    cmd.Parameters.AddWithValue("@ACTIMERAMP", ACTIMERAMP);
+                    cmd.Parameters.AddWithValue("@ACCHAN", ACCHAN);
+                    cmd.Parameters.AddWithValue("@ACCHANLOW", ACCHANLOW);
+                }
+                else
+                {
+                    {
+                        cmd.Parameters.AddWithValue("@ACVOLTAGE", "N/A");
+                        cmd.Parameters.AddWithValue("@ACLIMIT", "N/A");
+                        cmd.Parameters.AddWithValue("@ACLIMITLOW", "N/A");
+                        cmd.Parameters.AddWithValue("@ACLIMITARC", "N/A");
+                        cmd.Parameters.AddWithValue("@ACLIMITARCFILTER", "N/A");
+                        cmd.Parameters.AddWithValue("@ACTIME", "N/A");
+                        cmd.Parameters.AddWithValue("@ACTIMERAMP", "N/A");
+                        cmd.Parameters.AddWithValue("@ACCHAN", "N/A");
+                        cmd.Parameters.AddWithValue("@ACCHANLOW", "N/A");
+                    }
+                }
+                cmd.ExecuteNonQuery();
+                conn.Close();
+            }
+        }
+
+        private void GenerateReport()
+        {
+            TestResults TestResultsForm = new TestResults();
+            TestResultsForm.StartPosition = FormStartPosition.CenterParent;
+            TestResultsForm.ShowDialog();
+        }
+
+        //----------------Serial Port 1 Listener------------------------
+        public delegate void AddDataDelegate(String mySerString);
+        public AddDataDelegate myDelegate;
+        private void AddDataMethod(String mySerString)
+        {
+            textBox2.Text = mySerString;
+            Debug.WriteLine("Serial Recieved on serialPort1");
+
+            ReceiveSetupInfo(mySerString);
+
+            if ((testFlag == 1) && (i < 4)) // 4 for MODE, OMET, MMET, RES:ALL
+            {
+                //Parse string & create array
+                string[] serDataString = mySerString.Split(',');
+
+                for (int counter = 0; counter < 7; counter++)
+                {
+                    Debug.WriteLine(serDataString[counter]);
+                    if ((serDataString[counter].Length >= 3) && (String.Equals(serDataString[counter].Substring(0, 3), "116", StringComparison.Ordinal)))
+                    { serDataString[counter] = "PASS"; }
+                    else if ((serDataString[counter].Length >= 3) && (String.Equals(serDataString[counter].Substring(0, 3), "115", StringComparison.Ordinal)))
+                    { serDataString[counter] = "TESTING"; }
+                    else if ((serDataString[counter].Length >= 3) && (String.Equals(serDataString[counter].Substring(0, 3), "114", StringComparison.Ordinal)))
+                    { serDataString[counter] = "CAN NOT TEST"; }
+                    else if ((serDataString[counter].Length >= 3) && (String.Equals(serDataString[counter].Substring(0, 3), "113", StringComparison.Ordinal)))
+                    { serDataString[counter] = "USER STOP"; }
+                    else if ((serDataString[counter].Length >= 3) && (String.Equals(serDataString[counter].Substring(0, 3), "112", StringComparison.Ordinal)))
+                    { serDataString[counter] = "STOP"; }
+                }
+                serDataArray[i] = serDataString;
+
+                i++;
+
+                if (i == 4)
+                {
+                    i = 0;
+                    testFlag = 0;
+                    WriteToDB();
+                    WriteToAccessDB();
+                    GenerateReport();
+                }
+            }
+
+            //Look for PASS/FAIL
+            if (mySerString.Length >= 6)
+            {
+                if (String.Equals(mySerString.Substring(0, 6), "\"PASS\"", StringComparison.Ordinal))
+                {
+                    GetTestResults();
+                }
+                else if (String.Equals(mySerString.Substring(0, 6), "\"FAIL\"", StringComparison.Ordinal))
+                {
+                    MessageBox.Show("FAIL");
+                }
+            }
+        }
+        private void serialPort1_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            string newSerString = this.serialPort1.ReadLine();
+            newSerString = newSerString.TrimEnd('\r');
+            Debug.WriteLine(newSerString);
+            testString = newSerString;
+            textBox2.Invoke(this.myDelegate, new Object[] { newSerString });
+        }
+
+        //----------------Serial Port 2 Listener------------------------
+        public delegate void AddDataDelegate2(String indata);
+        public AddDataDelegate2 myDelegate2;
+        private void AddDataMethod2(String indata)
+        {
+            Debug.WriteLine("AddDataMethod2");
+            if (String.Equals(indata.Substring(0, 6), "CHROMA", StringComparison.Ordinal))
+            {
+                string[] ChromaInfo = indata.Split('X');
+                ChromaModelTextBox.Text = ChromaInfo[0];
+                ChromaSerialTextBox.Text = ChromaInfo[1];
+                ChromaCalDateTextBox.Text = ChromaInfo[2];
+            }
+            else if (String.Equals(indata.Substring(0, 2), "WO", StringComparison.Ordinal))
+            {
+                Debug.WriteLine("Work Order Detected");
+                WorkOrderNum.Text = indata;
+            }
+            else if (String.Equals(indata.Substring(0, 4), "+$$+", StringComparison.Ordinal))
+            {
+                Debug.WriteLine("Unit Serial Number Detected");
+                string[] snparsed = indata.Split('+', '/');
+                IlluminatorSN.Text = snparsed[2];
+            }
+            else if (String.Equals(indata.Substring(0, 6), "TX450D", StringComparison.Ordinal))
+            {
+                Debug.WriteLine("Part Number Detected");
+                PartNum.Text = indata;
+            }
+            else if (indata.Length >= 6 && indata.Length >= 9 && String.Equals(indata.Substring(0, 9), "TITANX450", StringComparison.Ordinal))
+            {
+                Debug.WriteLine("Model Number Detected");
+                ModelNum.Text = indata;
+            }
+            else if (indata.Length >= 6 && indata.Length >= 6 && String.Equals(indata.Substring(0, 7), "1234567", StringComparison.Ordinal))
+            {
+                Debug.WriteLine("Ballast SN Detected");
+                BallastSN.Text = indata;
+            }
+            else if (indata.Length == 7)
+            {
+                Debug.WriteLine("Lamp Serial Number Detected");
+                LampSN.Text = indata;
+            }
+        }
+        private void serialPort2_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            Debug.WriteLine("Serial Recieved on serialPort2");
+
+            SerialPort sp = (SerialPort)sender;
+            string indata = sp.ReadExisting();  //sp.ReadLine wasn't working
+
+            indata = indata.TrimEnd('\r');
+            Debug.WriteLine(indata);
+            WorkOrderNum.Invoke(this.myDelegate2, new Object[] { indata });
         }
     }
 }
